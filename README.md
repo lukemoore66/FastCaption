@@ -19,10 +19,10 @@ Usage:
 7. Repeat as needed
 
 Configuration:
-All of your presets are stored in a cfg file inside directory you have chosen to edit images
+Presets are stored in a cfg file inside the directory you have chosen to edit your images in.
 
-The preset template is stored in the cap.cfg file, you can change this to suit you own needs
+The default preset template is stored in the cap.cfg file, you can change this to suit you own needs.
 
-The window will scale to 90% of your primary monitor's vertical resolution, to allow for as many presets as possible, if you change monitor resolution, your presets may get truncated, so keep a backup!
+The window will scale to 90% of your primary monitor's vertical resolution, to allow for as many presets as possible, if you change the resolution, your presets may get truncated, so keep a backup!
 
 ![Screenshot](screenshot.png)
