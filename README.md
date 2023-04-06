@@ -1,4 +1,4 @@
-# FastCaption
+# Fast Caption
 An image captioning GUI written in PowerShell
 
 This is useful for captioning images for text-to-image projects like Stable Diffusion.
