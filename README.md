@@ -5,7 +5,7 @@ This is useful for captioning image datasets for text-to-image projects like Sta
 
 PowerShell v7 required.
 
-This script will generate a GUI that will allow the fast editing of captions via a preset system.
+This script will generate a GUI that facilitates the fast editing of captions via a preset and toolbox system.
 It will display thumbnails of each image, so they can be browsed and edited very easily.
 The captions are stored alongside the image in a text file that shares the same name as the image.
 
