@@ -188,7 +188,7 @@ Function Create-Cfg () {
 	}
 }
 
-Function Populate-FlowLayoutPanel ($inputDir, $flowLayoutPanel) {
+Function Populate-FlowLayoutPanel () {
 	$flowLayoutPanel.Controls.Clear()
 	
 	ForEach ($imageFile in $Script:imageFiles) {
@@ -205,7 +205,13 @@ Function Populate-FlowLayoutPanel ($inputDir, $flowLayoutPanel) {
 		$button.Tag = $imageFile.Name
 		$flowLayoutPanel.Controls.Add($button)
 		
-		Set-ButtonBorder $button
+		If ($Script:editedList -contains $button.Tag) {
+			$button.FlatAppearance.BorderSize = 5
+			$button.FlatAppearance.BorderColor = [System.Drawing.Color]::Green
+		}
+		Else {
+			$button.FlatAppearance.BorderSize = 0
+		}
 		
 		$button.Add_Click({
 			Prompt-Save $form
@@ -213,9 +219,15 @@ Function Populate-FlowLayoutPanel ($inputDir, $flowLayoutPanel) {
 			# Update the picture box and text box with the selected image and text file
 			$Script:selectedImageFile = $this.Tag
 			$selectedImageFile = $this.Tag
-			$Script:currentImagePath = '{0}\{1}' -f $InputDir, $selectedImageFile
+			$Script:currentImagePath = '{0}\{1}' -f $Script:InputDir, $selectedImageFile
+			
+			#dispose of the previous picture box image if there is one
+			If ($picBox.Image) {
+				$picBox.Image.Dispose()
+			}
+			
 			$picBox.Image = [System.Drawing.Image]::FromFile($Script:currentImagePath)
-			$selectedTextFile = '{0}\{1}' -f $InputDir, [System.IO.Path]::ChangeExtension($selectedImageFile, '.txt')
+			$selectedTextFile = '{0}\{1}' -f $Script:InputDir, [System.IO.Path]::ChangeExtension($selectedImageFile, '.txt')
 			
 			# create the text file if it DNE
 			If (-not (Test-Path -LiteralPath $selectedTextFile)) {
@@ -227,34 +239,112 @@ Function Populate-FlowLayoutPanel ($inputDir, $flowLayoutPanel) {
 			$Script:txtBox.SelectionStart = $txtBox.Text.Length
 			$fileNameTxtBox.Text = $Script:selectedImageFile
 			
-			If ($this.FlatAppearance.BorderColor -eq [System.Drawing.Color]::Green) {
-				$MarkAsEditedButton.Text = "Unmark as Edited"
+			If ($Script:editedList -contains $this.Tag) {
+				$markAsEditedButton.Text = "Unmark As Edited"
 			}
 			Else {
-				$MarkAsEditedButton.Text = "Mark as Edited"
+				$markAsEditedButton.Text = "Mark As Edited"
 			}
+			
+			#update the combo box selection
+			$searchCombo.SelectedIndex = $flowLayoutPanel.Controls.IndexOf($this)
 		})
 		
 		$button.Add_KeyPress({
-			param($sender, $eventArgs)
-			if ($eventArgs.KeyChar -eq 'M') {
-				$MarkAsEditedButton.PerformClick()
+			param($sender, $e)
+						
+		    If ($e.KeyChar -ceq 'M') {
+				ForEach ($button in $flowLayoutPanel.Controls) {
+					If ($Script:editedList -notcontains $button.Tag) {
+						$Script:editedList.Add($button.Tag)
+						$button.FlatAppearance.BorderSize = 5
+						$button.FlatAppearance.BorderColor = [System.Drawing.Color]::Green
+					}
+				}
+				$markAsEditedButton.Text = "Unmark as Edited"
+				Return
+			}
+			
+			If ($e.KeyChar -ceq 'U') {
+				ForEach ($button in $flowLayoutPanel.Controls) {
+					If ($Script:editedList -contains $button.Tag) {
+						$Script:editedList.Remove($button.Tag)
+						$button.FlatAppearance.BorderSize = 0
+						$button.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+					}
+				}
+				$markAsEditedButton.Text = "Mark as Edited"
+				Return
+			}
+
+			If ($e.KeyChar -ceq 'm') {
+				If ($Script:editedList -notcontains $this.Tag) {
+						$Script:editedList.Add($this.Tag)
+						$this.FlatAppearance.BorderSize = 5
+						$this.FlatAppearance.BorderColor = [System.Drawing.Color]::Green
+				}
+				$markAsEditedButton.Text = "Unmark as Edited"
+				Return
+			}
+			
+			If ($e.KeyChar -ceq 'u') {
+				If ($Script:editedList -contains $this.Tag) {
+						$Script:editedList.Remove($this.Tag)
+						$this.FlatAppearance.BorderSize = 0
+						$this.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+				}
+				$markAsEditedButton.Text = "Mark as Edited"
+				Return
 			}
 		})
 	}
 }
 
-Function Set-ButtonBorder ($button) {
-	$imageFile = $button.tag
-	# Set the border colour of the button
-	If ((Get-SectionLines 'EditedFiles' $Script:cfgPath -ErrorAction SilentlyContinue) -contains $imageFile) {
-		$button.FlatAppearance.BorderSize = 5
-		$button.FlatAppearance.BorderColor = [System.Drawing.Color]::Green
-	}
-	Else {
-		$button.FlatAppearance.BorderSize = 1
-		$button.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
-	}
+Function Show-PopUp ($control, $message) {
+	# set the popup's location and size
+	$controlLocation = $control.PointToScreen([System.Drawing.Point]::Empty)
+	$popupFormX = [System.Math]::Floor($controlLocation.X - ($controlLocation.X * 0.0025))
+	$popupFormY = [System.Math]::Floor($controlLocation.Y - ($controlLocation.Y * 0.015))
+	$popupFormWidth = [System.Math]::Floor($control.ClientSize.Width + ($control.ClientSize.Width * 0.075))
+	$popupFormHeight = [System.Math]::Floor($control.ClientSize.Height + ($control.ClientSize.Height * 0.05))
+	
+	# Create a new form with a label control that displays the popup message
+	$popupForm = New-Object System.Windows.Forms.Form
+	$popupForm.StartPosition = 'Manual'
+    $popupForm.Location = New-Object System.Drawing.Point($popupFormX, $popupFormY)
+	$popupForm.Width = $popupFormWidth
+	$popupForm.Height = $popupFormHeight
+	$popupForm.FormBorderStyle = 'None'
+	$popupForm.BackColor = [System.Drawing.Color]::WhiteSmoke
+	$popupForm.Anchor = 'Top'
+
+	$popupLabel = New-Object System.Windows.Forms.Label
+	$popupLabel.Text = $message
+	$popupLabel.Font = New-Object System.Drawing.Font("Arial", 10, [System.Drawing.FontStyle]::Bold)
+	$popupLabel.TextAlign = 'MiddleCenter'
+	$popupLabel.Dock = 'Fill'
+	$popupForm.Controls.Add($popupLabel)
+	
+	# Set a timer to toggle the visibility of the label to make the text flash
+	$flashtimer = New-Object System.Windows.Forms.Timer
+	$flashtimer.Interval = 500 # Set the interval to half a second
+	$flashtimer.add_Tick({
+		$popupLabel.Visible = !$popupLabel.Visible # Toggle the visibility of the label
+	})
+	$flashtimer.Start()
+
+	# Set a timer to close the form after a few seconds
+	$timer = New-Object System.Windows.Forms.Timer
+	$timer.Interval = 3000
+	$timer.add_Tick({
+		$flashtimer.Dispose()
+		$popupForm.Close()
+		$timer.Dispose()
+	})
+	$timer.Start()
+
+	# Show the form
+	$popupForm.ShowDialog()
 }
 
 Function Open-Folder ($form) {
@@ -264,7 +354,7 @@ Function Open-Folder ($form) {
 		If ($savedFolderPath) {
 			$savedFolderPath = $savedFolderPath.Split('=')[-1]
 			If (Test-Path -LiteralPath $savedFolderPath) {
-				$imageFiles = Get-ChildItem -LiteralPath $savedFolderPath -Include $Script:imageFormats
+				$imageFiles = Get-ImageFiles $savedFolderPath
 				If ($imageFiles) {
 					Init-Form $savedFolderPath $form $ImageFiles
 					return
@@ -284,50 +374,107 @@ Function Open-Folder ($form) {
 	$response = $folderBrowserDialog.ShowDialog()
 	
 	If ($response -eq [System.Windows.Forms.DialogResult]::OK) {
-		$imageFiles = Get-ChildItem -LiteralPath $folderBrowserDialog.SelectedPath -Include $Script:imageFormats
+		$imageFiles = Get-ImageFiles $folderBrowserDialog.SelectedPath
 		If ($imageFiles) {
 			Init-Form $folderBrowserDialog.SelectedPath $form $ImageFiles
-			$folderBrowserDialog.Dispose()
 		}
 		Else {
 			Open-Folder $form
 		}
 	}
 	Else {
-		$folderBrowserDialog.Dispose()
 		If (-not $form) {exit}
+	}
+	
+	End {
+		If ($folderBrowserDialog) {$folderBrowserDialog.Dispose()}
 	}
 }
 
-Function Init-Form ($InputDir, $form, $ImageFiles) {
-	Prompt-Save $form
-	Write-Config $form
+Function Get-ImageFiles ($folderPath) {
+	#always get all the files
+	$imageFiles = Get-ChildItem -LiteralPath $folderPath -Include $Script:imageFormats
+		
+	If ([string]::IsNullOrEmpty($searchBox.Text)) {
+		Return $imageFiles
+	}
 	
+	#if we are in the filename filtering mode
+	If (-not $Script:filterMode) {
+		$imageFiles = $imageFiles | Where-Object {$_.Name -match $searchBox.Text}
+		Return $imageFiles
+	}
+	
+	#otherwise we are in the content filtering mode
+	$imageFiles = $imageFiles | Where-Object {(Get-Content -LiteralPath $([System.IO.Path]::ChangeExtension([string]$_.FullName, '.txt')) -ErrorAction SilentlyContinue) -match $searchBox.Text}
+	Return $imageFiles
+}
+
+Function Init-Form ($InputDir, $form, $ImageFiles) {
+	$InputDir = (Resolve-Path -LiteralPath $InputDir).Path
+	$Script:InputDir = $InputDir
+	$Script:InputDirName = Split-Path $InputDir -Leaf
+	$Script:cfgPath = '{0}\{1}{2}' -f $InputDir, $InputDirName, '.cfg'
+	
+	#create a config file if one dne yet
+	Create-Cfg
+	
+	$oldInputDir = $Script:InputDir
+	$oldInputDirName = $Script:InputDirName
+	$oldcfgPath = $Script:cfgPath
+	
+	Prompt-Save $form
+	
+	#only write config if we have changed directory
+	If ($InputDir -ne $oldInputDir) {
+		Write-Config $form
+	}
+	
+	#if there is no form yet
 	If (-not $form)	{
 		$Script:presetControls = [ordered]@{}
 		$Script:txtBox = $null
+		(Get-SectionLines 'EditedFiles' $oldcfgPath) | ForEach-Object {$Script:editedList.Add($_)}
 	}
 	
-	$Script:InputDir = Resolve-Path -LiteralPath $InputDir
-	$Script:InputDirName = Split-Path $InputDir -Leaf
-	$Script:cfgPath = '{0}\{1}{2}' -f $InputDir, $InputDirName, '.cfg'
+	#if we have changed directory
+	If ($InputDir -ne $oldInputDir) {
+		If (-not $oldcfgPath) {$oldcfgPath = $Script:cfgPath}
+		$Script:editedList = New-Object System.Collections.Generic.List[string]
+		(Get-SectionLines 'EditedFiles' $oldcfgPath) | ForEach-Object {$Script:editedList.Add($_)}
+	}
+	
+	#clear the search filter if needed
+	If (($InputDir -ne $oldInputDir) -and (-not [string]::IsNullOrEmpty($searchBox.Text))) {
+		$searchBox.Text = ''
+	}
 	
 	$Script:imageFiles = $ImageFiles
 	$Script:selectedImageFile = $null
 	$Script:currentImagePath = $null
 	$Script:currentTextPath = $null
 	
-	# make a cfg file if it dne
-	Create-Cfg
-	
 	Populate-Form $form
 }
 
 Function Populate-Form ($form) {
-	if (-not $form) {return}
+	If (-not $form) {Return}
+	
+	#set and reset the tool combo box selection, this populates the tool box
+	$selectedIndex = $toolCombo.SelectedIndex
+	$toolCombo.SelectedIndex = ($selectedIndex + 1) % ($toolCombo.Items.Count - 1)
+	$toolCombo.SelectedIndex = $selectedIndex
 	
 	#populate the flow layout panel
-	Populate-FlowLayoutPanel $InputDir $flowLayoutPanel
+	Populate-FlowLayoutPanel
+	
+	#set the filtering mode
+	Set-FilterMode
+	
+	#populate combo box
+	$searchCombo.Items.Clear()
+	$searchCombo.Items.AddRange($Script:imageFiles.Name)
+	$searchCombo.SelectedIndex = 0
 
 	#add all of the preset controls
 	Populate-PresetControls
@@ -338,19 +485,28 @@ Function Populate-Form ($form) {
 	$control.PerformClick()
 }
 
+Function Set-FilterMode() {
+	If ($Script:filterMode) {
+		$radioButton1.Checked = $False
+		$radioButton2.Checked = $True
+		Return
+	}
+	
+	$radioButton2.Checked = $False
+	$radioButton1.Checked = $True
+}
+
 Function Write-Config ($form) {
 	if (-not $form) {return}
-	
+		
 	$cfgContent = New-Object System.Collections.Generic.List[string]
 	
 	#set the edited files section of the config file
 	$cfgContent.Add('[EditedFiles]')
-	ForEach ($button in $flowLayoutPanel.Controls) {
-		#if the button is green, we add the file to the edited list
-		If ($button.FlatAppearance.BorderColor -eq [System.Drawing.Color]::Green) {
-			$cfgContent.Add($button.tag)
-		}
-	}
+	ForEach ($image in ($Script:editedList | Where-Object {$_})) {
+		#add all images in the edited list
+		$cfgContent.Add($image)
+	} 
 	
 	#set the preset texts section of the config file
 	$cfgContent.Add('[PresetTexts]')
@@ -404,4 +560,129 @@ Function Write-CapCfg ($key, $value) {
 	}
 	
 	Set-Content -LiteralPath $Script:capCfgPath -Value $cfgContent	
+}
+
+Function Handle-ToolBoxChange ($selection) {
+		Switch ($selection) {
+		'Append' {
+			$toolTextBox1.Width = $toolCombo.Left - $showButton.Left - 5
+			$toolTextBox1.Enabled = $true
+			$toolTextBox2.Visible = $false
+		}
+		'Prepend' {
+			$toolTextBox1.Width = $toolCombo.Left - $showButton.Left - 5
+			$toolTextBox1.Enabled = $true
+			$toolTextBox2.Visible = $false
+		}
+		'Replace' {
+			$toolTextBox1.Width = (($toolCombo.Left - $showButton.Left) / 2) - 10
+			$toolTextBox1.Enabled = $true
+			$toolTextBox2.Visible = $true
+		}
+		'Remove' {
+			$toolTextBox1.Width = $toolCombo.Left - $showButton.Left - 5
+			$toolTextBox1.Enabled = $true
+			$toolTextBox2.Visible = $false
+		}
+		'Regex Replace' {
+			$toolTextBox1.Width = (($toolCombo.Left - $showButton.Left) / 2) - 10
+			$toolTextBox1.Enabled = $true
+			$toolTextBox2.Visible = $true
+		}
+		'Set All Text' {
+			$toolTextBox1.Width = $toolCombo.Left - $showButton.Left - 5
+			$toolTextBox1.Enabled = $true
+			$toolTextBox2.Visible = $false
+		}
+		'Clear All Text' {
+			$toolTextBox1.Width = $toolCombo.Left - $showButton.Left - 5
+			$toolTextBox1.Enabled = $false
+			$toolTextBox2.Visible = $false	
+		}
+		Default {
+			Throw(Write-Error ('Unknown Combo box selection: {0}' -f $_))
+		}
+	}
+}
+
+Function Handle-ToolBoxButton ($selection, $allFiles) {
+	If ($allFiles) {
+		$result = [System.Windows.Forms.MessageBox]::Show(
+			('This will apply the ''{0}'' action to all current files. This cannot be undone. Are you sure you wish to proceed?' -f $selection.ToLower()),
+			'Warning',
+			[System.Windows.Forms.MessageBoxButtons]::YesNo,
+			[System.Windows.Forms.MessageBoxIcon]::Warning
+		)
+		
+		If ($result -ne [System.Windows.Forms.DialogResult]::Yes) {
+			Return
+		}
+		
+		ForEach ($file in $Script:imageFiles) {
+			$textFile = [System.IO.Path]::ChangeExtension($file.FullName, '.txt')
+			If (-not (Test-Path -LiteralPath $textFile)) {
+				New-Item -Path $textFile -ItemType File | Out-Null
+			}
+			
+			$content = Get-Content -LiteralPath $textFile
+			
+			Switch ($selection) {
+				'Append' {
+					$content += $toolTextBox1.Text
+				}
+				'Prepend' {
+					$content = $toolTextBox1.Text + $content
+				}
+				'Replace' {
+					$content = $content.Replace($toolTextBox1.Text, $toolTextBox2.Text)
+				}
+				'Remove' {
+					$content = $content.Replace($toolTextBox1.Text, '')
+				}
+				'Regex Replace' {
+					$content = $content -replace $toolTextBox1.Text, $toolTextBox2.Text
+				}
+				'Set All Text' {
+					$content = $toolTextBox1.Text
+				}
+				'Clear All Text' {
+					$content  = ''
+				}
+				Default {
+					Throw(Write-Error ('Unknown Combo box selection: {0}' -f $_))
+				}
+			}
+			
+			Set-Content -LiteralPath $textFile -Value $content
+			$txtBox.Text = Get-Content -LiteralPath $Script:currentTextPath
+		}
+	}
+	Else {
+		Switch ($selection) {
+			'Append' {
+				$txtBox.Text += $toolTextBox1.Text
+			}
+			'Prepend' {
+				$txtBox.Text = $toolTextBox1.Text + $txtBox.Text
+			}
+			'Replace' {
+				$txtBox.Text = $txtBox.Text.Replace($toolTextBox1.Text, $toolTextBox2.Text)
+			}
+			'Remove' {
+				$txtBox.Text = $txtBox.Text.Replace($toolTextBox1.Text, '')
+			}
+			'Regex Replace' {
+				$txtBox.Text = $txtBox.Text -replace $toolTextBox1.Text, $toolTextBox2.Text
+			}
+			'Set All Text' {
+				$txtBox.Text = $toolTextBox1.Text
+			}
+			'Clear All Text' {
+				$txtBox.Text = ''
+			}
+			Default {
+				Throw(Write-Error ('Unknown Combo box selection: {0}' -f $_))
+			}
+		}
+	}
 }
