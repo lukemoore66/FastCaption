@@ -19,9 +19,9 @@ Basic Usage:
 7. Repeat as needed
 
 Extra features:
-- File filtering: Underneath the thumbnail panel, there is a file filtering text box. You can filter the displayed image files by either file name, or caption content.
+- Filtering: Underneath the thumbnail panel, there is a file filtering text box. You can filter the displayed image files by either file name, or caption content.
 
-- Tool box: Underneath the text box containing the current caption's content, there is a tool box that can perform various functions. Select the function you want from the drop down, and the appropriate controls will appear. Click the 'All Files' check box if you want to perform the action on all current files. The following functions are supported:
+- Toolbox: Underneath the text box containing the current caption's content, there is a toolbox that can perform various functions. Select the function you want from the drop down, and the appropriate controls will appear. Click the 'All Files' check box if you want to perform the action on all current files. The following functions are supported:
   - Append: Appends the content of the text box to the current caption.
   - Prepend: Prepends the content of the text box to the current caption.
   - Replace: Replaces all instances of the content in the left text box with the content in the right text box in the current caption.
@@ -31,10 +31,10 @@ Extra features:
   - Clear All Text: Clears the current caption.
 
 - Shortcut keys:
-   - 'm'            Pressing 'm' while the thumbnail panel is focussed will mark the current thumbnail as edited.
-   - 'shift + m'    Pressing 'shift + m' while the thumbnail panel is focussed with mark all current thumbnails as edited.
-   - 'u'            Pressing 'u' while the thumbnail panel is focussed will unmark the current thumbnail as edited.
-   - 'shift + u'    Pressing 'shift + u' while the thumbnail panel is focussed with unmark all current thumbnails as edited.
+   - m: Pressing while the thumbnail panel is focussed will mark the current thumbnail as edited.
+   - u: Pressing while the thumbnail panel is focussed will unmark the current thumbnail as edited.
+   - shift + m: Pressing while the thumbnail panel is focussed with mark all current thumbnails as edited.
+   - shift + u: Pressing while the thumbnail panel is focussed with unmark all current thumbnails as edited.
 
 - Configuration:
   - Presets are stored in a cfg file inside the directory you have chosen to edit your images in.
