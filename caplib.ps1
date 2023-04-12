@@ -56,12 +56,12 @@ Function Clean-Text ($text) {
 	Return $cleanedText
 }
 
-Function Add-PresetControl ($top, $left, $width, $height) {
+Function Add-PresetControl ($panel, $top, $left, $width, $height) {
 	$textBox = New-Object System.Windows.Forms.TextBox
 	$textBox.Width = $width - 45
 	$textBox.Height = $height
 	$textBox.Location = New-Object System.Drawing.Point($left, $top)
-	$form.Controls.Add($textBox)
+	$panel.Controls.Add($textBox)
 	
 	$button = New-Object System.Windows.Forms.Button
 	$button.Text = 'Add'
@@ -69,7 +69,7 @@ Function Add-PresetControl ($top, $left, $width, $height) {
 	$button.Height = $height - 5
 	$buttonLeft = $textBox.Left + $textBox.Width + 5
 	$button.Location = New-Object System.Drawing.Point($buttonLeft, $top)
-	$form.Controls.Add($button)
+	$panel.Controls.Add($button)
 	
 	$Script:presetControls[$button] = $textbox
 		
@@ -115,15 +115,29 @@ Function Add-PresetControls ($form, $picBox) {
 	$controlHeight = $getControlHeight.PreferredHeight + 5
 	$getControlHeight = $null
 	
+	#get width and height of the panel
+	$totalWidth = $picBox.Width
+	$totalHeight = $form.Height - $top - 40
+	
+	#make a panel to store the controls
+	$presetPanel = New-Object System.Windows.Forms.Panel
+	$presetPanel.Top = $top
+	$presetPanel.Left = $left
+	$presetPanel.Width = $totalWidth
+	$presetPanel.Height = $totalHeight
+	$presetPanel.AutoScroll = $true
+	$form.Controls.Add($presetPanel)
+	
 	#calculate the amount of controls that can be fit into the form's height
-	$numOfControlsHeight = (($form.Height - $top - 40) / $controlHeight)
-	$numOfControlsHeight = [System.Math]::Floor($numOfControlsHeight)
+	#$numOfControlsHeight = ($totalHeight / $controlHeight)
+	#$numOfControlsHeight = [System.Math]::Floor($numOfControlsHeight)
+	$numOfControlsHeight = 32
 	
 	#set the number of controls for the given width
 	$numOfControlsWidth = 2
 	
 	#calculate the width that each button and textbox pair has to work with
-	$controlWidth = [System.Math]::Floor($picBox.Width / $numOfControlsWidth)
+	$controlWidth = [System.Math]::Floor($totalWidth / $numOfControlsWidth) - 18
 	
 	$topOffset = 0
 	$leftOffset = 0
@@ -131,8 +145,8 @@ Function Add-PresetControls ($form, $picBox) {
 	For ($i = 0; $i -lt $numOfControlsWidth; $i++) {
 		$controlLeft = $left + $leftOffset
 		For ($j = 0; $j -lt $numOfControlsHeight; $j++) {
-			$controlTop = $top + $topOffset
-			Add-PresetControl $controlTop $controlLeft $controlWidth $controlHeight
+			$controlTop = $topOffset
+			Add-PresetControl $presetPanel $controlTop $controlLeft $controlWidth $controlHeight
 			$topOffset += $controlHeight
 			$controlCount++
 		}
