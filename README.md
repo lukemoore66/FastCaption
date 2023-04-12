@@ -1,9 +1,9 @@
 # Fast Caption
-An image captioning GUI written in PowerShell
+An image captioning GUI written in PowerShell.
 
 This is useful for captioning image datasets for text-to-image projects like Stable Diffusion.
 
-PowerShell v7 required
+PowerShell v7 required.
 
 This script will generate a GUI that will allow the fast editing of captions via a preset system.
 It will display thumbnails of each image, so they can be browsed and edited very easily.
