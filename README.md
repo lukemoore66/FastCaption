@@ -1,7 +1,7 @@
 # Fast Caption
 An image captioning GUI written in PowerShell
 
-This is useful for captioning images for text-to-image projects like Stable Diffusion.
+This is useful for captioning image datasets for text-to-image projects like Stable Diffusion.
 
 PowerShell v7 required
 
